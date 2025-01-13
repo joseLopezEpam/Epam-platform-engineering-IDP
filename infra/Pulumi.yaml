@@ -1,0 +1,11 @@
+name: epam-platform-engineering-idp
+description: Pulumi Project for the IDP Platform
+runtime:
+  name: python
+  options:
+    toolchain: pip
+    virtualenv: venv
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: aws-python
