@@ -71,17 +71,16 @@ def lambda_handler(event, context):
             for service in services:
                 queue_url = queue_map.get(service)
                 if queue_url:
-                    msg_body = {
-                        "ProjectName": project_name,
-                        "Service": service
-                    }
+                    # En lugar de solo enviar ProjectName y Service,
+                    # enviamos 'body' completo:
                     response = sqs_client.send_message(
                         QueueUrl=queue_url,
-                        MessageBody=json.dumps(msg_body)
+                        MessageBody=json.dumps(body)
                     )
-                    print(f"Enviado a la cola {service}: {msg_body}. MessageId: {response['MessageId']}")
+                    print(f"Enviado a la cola {service}: {body}. MessageId: {response['MessageId']}")
                 else:
                     print(f"No se encontró una cola para el servicio: {service}")
+
 
         # Respuesta exitosa
         return {
