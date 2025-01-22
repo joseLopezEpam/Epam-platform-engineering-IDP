@@ -12,7 +12,7 @@ from resources import (
     stop_vm_queue,
 )
 
-# Crear el rol de ejecución para Lambda
+# Create the execution role for Lambda
 lambda_role = aws.iam.Role(
     "lambdaRole",
     assume_role_policy=json.dumps({
@@ -29,7 +29,7 @@ lambda_role = aws.iam.Role(
     }),
 )
 
-# Lista de ARNs de las colas para Lambda
+# List of queue ARNs for Lambda
 queue_arns = [
     vpc_queue.arn,
     container_cluster_queue.arn,
@@ -39,7 +39,7 @@ queue_arns = [
     stop_vm_queue.arn,
 ]
 
-# Generar un documento de política para Lambda
+# Generate a policy document for Lambda
 policy_document = pulumi.Output.all(*queue_arns).apply(lambda arns: json.dumps({
     "Version": "2012-10-17",
     "Statement": [
@@ -56,26 +56,26 @@ policy_document = pulumi.Output.all(*queue_arns).apply(lambda arns: json.dumps({
     ]
 }))
 
-# Adjuntar la política a Lambda
+# Attach the policy to Lambda
 lambda_sqs_policy = aws.iam.RolePolicy(
     "lambdaSqsPolicy",
     role=lambda_role.id,
     policy=policy_document
 )
 
-# Adjuntar la política de CloudWatch Logs a Lambda
+# Attach the CloudWatch Logs policy to Lambda
 aws.iam.RolePolicyAttachment(
     "lambdaRoleLogs",
     role=lambda_role.id,
     policy_arn="arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
 )
 
-# --- Añadido para el usuario de IAM ---
+# --- Added for the IAM user ---
 
-# ARN del usuario de IAM que tendrá acceso a las colas
+# ARN of the IAM user who will have access to the queues
 iam_user_arn = "arn:aws:iam::160885293398:user/jcarlos.lopez2"
 
-# Definir las colas SQS a las que el usuario tendrá acceso
+# Define the SQS queues the user will have access to
 queue_arns_for_user = [
     vpc_queue.arn,
     container_cluster_queue.arn,
@@ -85,10 +85,10 @@ queue_arns_for_user = [
     stop_vm_queue.arn,
 ]
 
-# Crear una política de IAM personalizada para el usuario
+# Create a custom IAM policy for the user
 sqs_user_policy = aws.iam.Policy(
     "sqsUserPolicy",
-    description="Permisos para acceder a colas SQS específicas",
+    description="Permissions to access specific SQS queues",
     policy=pulumi.Output.all(*queue_arns_for_user).apply(lambda arns: json.dumps({
         "Version": "2012-10-17",
         "Statement": [
@@ -107,9 +107,9 @@ sqs_user_policy = aws.iam.Policy(
     })),
 )
 
-# Adjuntar la política personalizada al usuario de IAM
+# Attach the custom policy to the IAM user
 sqs_user_policy_attachment = aws.iam.PolicyAttachment(
     "sqsUserPolicyAttachment",
     policy_arn=sqs_user_policy.arn,
-    users=["jcarlos.lopez2"],  # Nombre del usuario sin el ARN completo
+    users=["jcarlos.lopez2"],  # User name without the full ARN
 )

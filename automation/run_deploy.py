@@ -3,21 +3,19 @@ import pkg_resources
 import pulumi
 import pulumi.automation as auto
 
-
 def create_or_select_stack(stack_name: str, pulumi_program_path: str):
     """
-    Crea o selecciona el stack `stack_name`, indicando que el código Pulumi
-    está en la carpeta `pulumi_program_path` (work_dir).
+    Creates or selects the stack `stack_name`, with the Pulumi code located in `pulumi_program_path`.
     """
     try:
-        # Selecciona stack existente
+        # Select existing stack
         stack = auto.select_stack(
             stack_name,
             work_dir=pulumi_program_path
         )
         print(f"Selected existing stack: {stack_name}")
     except auto.StackNotFoundError:
-        # Crea stack si no existe
+        # Create stack if it doesn't exist
         stack = auto.create_stack(
             stack_name,
             work_dir=pulumi_program_path
@@ -26,34 +24,28 @@ def create_or_select_stack(stack_name: str, pulumi_program_path: str):
 
     return stack
 
-
 def run_deploy():
-    # Nombre del stack que quieres usar
     stack_name = "dev"
+    pulumi_program_path = os.path.join(os.getcwd(), "infra")  # Use absolute path
 
-    # Ruta a la carpeta donde se encuentra "Pulumi.yaml"
-    # (por ejemplo, si "automation/" está al mismo nivel que "infra/",
-    #  usar "../infra" u otra ruta relativa)
-    pulumi_program_path = os.path.join("..", "infra")
-
-    # Comprobamos versión de Pulumi instalada en runtime
+    # Check the Pulumi runtime version
     pulumi_version = pkg_resources.get_distribution("pulumi").version
     print(f"Pulumi runtime version: {pulumi_version}")
 
-    # Creamos o seleccionamos stack
+    # Create or select the stack
     stack = create_or_select_stack(stack_name, pulumi_program_path)
 
-    # Config opcional (la región AWS que usarás)
+    # Optional configuration (AWS region)
     stack.set_config("aws:region", auto.ConfigValue(value="us-east-1"))
 
-    # Ejecutamos pulumi up
+    # Execute pulumi up
     up_res = stack.up(on_output=print)
 
-    # Ejemplo: imprimir un output de tu programa Pulumi
-    # (supongamos definiste un output "apiEndpoint" en infra/main.py)
+    # Example: print an output from your Pulumi program
     api_endpoint = up_res.outputs.get("apiEndpoint")
     if api_endpoint:
         print(f"API Endpoint => {api_endpoint.value}")
+
 
 if __name__ == "__main__":
     run_deploy()

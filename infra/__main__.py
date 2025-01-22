@@ -1,6 +1,6 @@
 import pulumi
 import pulumi_aws as aws
-import resources  # Centralized resource definitions
+import resources 
 import lambda_functions
 import api_gateway
 

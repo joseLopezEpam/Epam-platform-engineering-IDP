@@ -22,7 +22,7 @@ process_post_method = aws.apigateway.Method(
     rest_api=process_payload_api.id,
     resource_id=process_resource.id,
     http_method="POST",
-    authorization="NONE",  # Adjust authorization if needed
+    authorization="NONE",  
 )
 
 # Integration (API Gateway -> Lambda)

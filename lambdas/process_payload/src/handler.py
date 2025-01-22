@@ -4,60 +4,59 @@ import boto3
 
 def lambda_handler(event, context):
     """
-    Lee el payload de API Gateway, valida, y lo envía a distintas colas 
-    según la lista de servicios solicitados.
+    Reads the API Gateway payload, validates it, and sends it to different queues 
+    based on the requested services.
     """
     try:
         sqs_client = boto3.client("sqs")
 
-        # Log completo del evento recibido
-        print("Evento recibido en Lambda:", json.dumps(event, indent=4))
+        # Log the received event
+        print("Event received in Lambda:", json.dumps(event, indent=4))
 
-        # Decodificar el cuerpo si proviene de API Gateway
+        # Decode the body if it comes from API Gateway
         if "body" in event:
             try:
                 event = json.loads(event["body"])
-                print("Evento decodificado desde API Gateway:", json.dumps(event, indent=4))
-            except json.JSONDecodeError as e:
+                print("Decoded event from API Gateway:", json.dumps(event, indent=4))
+            except json.JSONDecodeError:
                 return {
                     "statusCode": 400,
-                    "body": json.dumps({"message": "El body no es un JSON válido."})
+                    "body": json.dumps({"message": "The body is not valid JSON."})
                 }
 
-        # Validar que existan registros en 'Records'
+        # Validate the presence of 'Records'
         records = event.get("Records", [])
         if not records:
-            print("No se encontraron registros en 'Records'. Evento recibido:", json.dumps(event, indent=4))
+            print("No records found in 'Records'. Event received:", json.dumps(event, indent=4))
             return {
                 "statusCode": 400,
-                "body": json.dumps({"message": "No se encontraron registros en 'Records'."})
+                "body": json.dumps({"message": "No records found in 'Records'."})
             }
 
-        # Iterar sobre los registros y procesar cada uno
+        # Process each record
         for record in records:
             try:
-                # Decodificar el contenido del body (que está como cadena JSON)
                 body = json.loads(record["body"])
-            except json.JSONDecodeError as e:
-                print(f"Error al decodificar 'body': {str(e)}")
+            except json.JSONDecodeError:
+                print("Error decoding 'body'")
                 return {
                     "statusCode": 400,
-                    "body": json.dumps({"message": "El 'body' no es un JSON válido."})
+                    "body": json.dumps({"message": "The 'body' is not valid JSON."})
                 }
 
-            # Extraer los datos del payload
+            # Extract data from the payload
             project_name = body.get("ProjectName")
             services = body.get("Services", [])
 
-            # Validar que existan los campos necesarios
+            # Validate required fields
             if not project_name or not services:
-                print("Datos incompletos en el payload:", body)
+                print("Incomplete data in the payload:", body)
                 return {
                     "statusCode": 400,
-                    "body": json.dumps({"message": "Datos incompletos. Se requiere 'ProjectName' y 'Services'."})
+                    "body": json.dumps({"message": "Incomplete data. 'ProjectName' and 'Services' are required."})
                 }
 
-            # Mapa de colas
+            # Queue mapping
             queue_map = {
                 "vpc": os.environ.get("VPC_QUEUE_URL"),
                 "container_cluster": os.environ.get("CONTAINER_CLUSTER_QUEUE_URL"),
@@ -67,30 +66,27 @@ def lambda_handler(event, context):
                 "stop_vm": os.environ.get("STOP_VM_QUEUE_URL")
             }
 
-            # Procesar servicios y enviar a las colas correspondientes
+            # Process services and send to respective queues
             for service in services:
                 queue_url = queue_map.get(service)
                 if queue_url:
-                    # En lugar de solo enviar ProjectName y Service,
-                    # enviamos 'body' completo:
                     response = sqs_client.send_message(
                         QueueUrl=queue_url,
                         MessageBody=json.dumps(body)
                     )
-                    print(f"Enviado a la cola {service}: {body}. MessageId: {response['MessageId']}")
+                    print(f"Sent to queue {service}: {body}. MessageId: {response['MessageId']}")
                 else:
-                    print(f"No se encontró una cola para el servicio: {service}")
+                    print(f"No queue found for service: {service}")
 
-
-        # Respuesta exitosa
+        # Successful response
         return {
             "statusCode": 200,
-            "body": json.dumps({"message": "Mensajes enviados correctamente."})
+            "body": json.dumps({"message": "Messages sent successfully."})
         }
 
     except Exception as e:
         print(f"Error: {str(e)}")
         return {
             "statusCode": 500,
-            "body": json.dumps({"message": f"Error interno: {str(e)}"})
+            "body": json.dumps({"message": f"Internal error: {str(e)}"})
         }

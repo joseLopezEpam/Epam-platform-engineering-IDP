@@ -1,5 +1,6 @@
 name: epam-platform-engineering-idp
-description: Pulumi Project for the IDP Platform
+description: >
+  Deploy an API Gateway to process payloads and route service requests to dedicated queues with the necessary details for resource creation. Supports dependencies, retry logic, and reliable processing.
 runtime:
   name: python
   options:
