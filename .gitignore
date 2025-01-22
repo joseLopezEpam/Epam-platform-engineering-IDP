@@ -4,3 +4,5 @@ venv/
 __pycache__/
 
 .stack-state.json
+policies.py
+test_sqs_queues.py
